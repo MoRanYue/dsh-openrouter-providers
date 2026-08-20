@@ -1,5 +1,9 @@
-# Automatically publish the package to npm when a version tag (vX.Y.Z) is
-# pushed, and on manual workflow_dispatch.
+# Automatically publish to npm via OIDC Trusted Publishing when a version tag
+# (vX.Y.Z) is pushed, and on manual workflow_dispatch.
+#
+# No NODE_AUTH_TOKEN: authentication comes from GitHub's OIDC token, which npm
+# validates against the Trusted Publisher configured on npmjs.com for this
+# package (see README). npm >= 11.5.1 is required for OIDC publishing.
 name: publish
 
 on:
@@ -13,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # npm provenance (--provenance) requires id-token write access.
+      # OIDC + provenance attestation require id-token write access.
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +25,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org/
+
+      - name: Upgrade npm (OIDC publishing requires npm >= 11.5.1)
+        run: npm install -g npm@latest
 
       - name: Check version matches tag
         run: |
@@ -32,7 +38,5 @@ jobs:
             exit 1
           fi
 
-      - name: Publish to npm
-        run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm (OIDC trusted publishing)
+        run: npm publish --provenance --access public

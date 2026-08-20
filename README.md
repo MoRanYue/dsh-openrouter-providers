@@ -15,23 +15,31 @@ DeepSeek Harness 插件：在设置页填写 OpenRouter 请求使用的**提供�
 
 插件以 **bundle 包**形式挂载，与其他插件（dshmarket、dsh-recall-plugin 等）一致，通过 `cordis.patch.yml` 的 insert 行自动合并进 profile composition。
 
-### 方式 A：从 GitHub 安装
+### 方式 A：从 npm 安装（推荐）
 
 在 profile 目录（如 `~/.dsh/profiles/web/`）执行：
 
 ```bash
-# 1. 添加依赖（npm/pnpm 均可解析 github 源）
-pnpm add dsh-openrouter-providers@github:MoRanYue/dsh-openrouter-providers
-
-# 2. 把包加入 profile 的 bundle 列表（package.json 的 dsh.profile.bundles）
-#    "dsh.profile": { "bundles": [ ..., "dsh-openrouter-providers" ] }
-
-# 3. 重启 dsh web
+pnpm add dsh-openrouter-providers@latest
 ```
 
-bundle 协调器会自动合并包内的 `cordis.patch.yml`（insert 行：`id: openrouter-providers`），无需手动编辑 profile 文件。
+然后把包加入 profile 的 `package.json` 的 `dsh.profile.bundles` 列表：
 
-### 方式 B：本地路径
+```json
+"dsh": { "profile": { "bundles": [ ..., "dsh-openrouter-providers" ] } }
+```
+
+再重启 `dsh web`。bundle 协调器自动合并包内的 `cordis.patch.yml`（insert 行：`id: openrouter-providers`）。
+
+### 方式 B：从 GitHub 安装
+
+```bash
+pnpm add dsh-openrouter-providers@github:MoRanYue/dsh-openrouter-providers
+```
+
+其余步骤与方式 A 相同（加入 `dsh.profile.bundles` 并重启）。
+
+### 方式 C：本地路径
 
 ```bash
 pnpm add dsh-openrouter-providers@file:D:\\path\\to\\dsh-openrouter-providers
