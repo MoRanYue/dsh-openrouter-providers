@@ -1,0 +1,5 @@
+# dsh bundle patch: inserts this plugin into a profile's layer stack.
+# 挂载后由 DSH CLI 的 bundle 协调自动合并这一个 insert 行。
+- insert:
+    - id: openrouter-providers
+      name: 'dsh-openrouter-providers'
