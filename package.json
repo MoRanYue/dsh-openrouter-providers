@@ -1,49 +1,49 @@
-{
-  "name": "dsh-openrouter-providers",
-  "version": "1.0.1",
-  "description": "OpenRouter Provider List — 在设置页填写 OpenRouter 请求使用的提供商列表，并作为 provider.only / provider.order 注入到所有 OpenRouter 模型请求中；设置持久化到工作区状态文件。",
-  "type": "module",
-  "main": "lib/index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MoRanYue/dsh-openrouter-providers.git"
-  },
-  "exports": {
-    ".": "./lib/index.js",
-    "./client": "./lib/client.js",
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "lib",
-    "cordis.patch.yml",
-    "README.md",
-    "LICENSE"
-  ],
-  "engines": {
-    "node": ">=22"
-  },
-  "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    },
-    "client": {
-      "platform": "web"
-    }
-  },
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1"
-  },
-  "keywords": [
-    "deepseek",
-    "harness",
-    "dsh",
-    "dsh-plugin",
-    "openrouter",
-    "provider-routing"
-  ],
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public"
-  },
-  "license": "MIT"
+﻿{
+    "name":  "dsh-openrouter-providers",
+    "version":  "1.0.2",
+    "description":  "OpenRouter Provider List — 在设置页填写 OpenRouter 请求使用的提供商列表，并作为 provider.only / provider.order 注入到所有 OpenRouter 模型请求中；设置持久化到工作区状态文件。",
+    "type":  "module",
+    "main":  "lib/index.js",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "git+https://github.com/MoRanYue/dsh-openrouter-providers.git"
+                   },
+    "exports":  {
+                    ".":  "./lib/index.js",
+                    "./client":  "./lib/client.js",
+                    "./package.json":  "./package.json"
+                },
+    "files":  [
+                  "lib",
+                  "cordis.patch.yml",
+                  "README.md",
+                  "LICENSE"
+              ],
+    "engines":  {
+                    "node":  "\u003e=22"
+                },
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           },
+                "client":  {
+                               "platform":  "web"
+                           }
+            },
+    "peerDependencies":  {
+                             "@deepseek-ai/cordis":  "^4.0.1"
+                         },
+    "keywords":  [
+                     "deepseek",
+                     "harness",
+                     "dsh",
+                     "dsh-plugin",
+                     "openrouter",
+                     "provider-routing"
+                 ],
+    "publishConfig":  {
+                          "registry":  "https://registry.npmjs.org/",
+                          "access":  "public"
+                      },
+    "license":  "MIT"
 }
