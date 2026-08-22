@@ -1,4 +1,4 @@
-﻿{
+{
     "name":  "dsh-openrouter-providers",
     "version":  "1.0.2",
     "description":  "OpenRouter Provider List — 在设置页填写 OpenRouter 请求使用的提供商列表，并作为 provider.only / provider.order 注入到所有 OpenRouter 模型请求中；设置持久化到工作区状态文件。",
