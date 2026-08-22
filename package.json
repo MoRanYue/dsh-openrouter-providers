@@ -1,7 +1,7 @@
 {
     "name":  "dsh-openrouter-providers",
-    "version":  "1.0.4",
-    "description":  "OpenRouter Provider List — 在「插件 → 插件配置」填写 OpenRouter 请求使用的提供商列表与量化位数限制，作为 provider.only / provider.order / provider.quantizations 注入；设置持久化到工作区状态文件。",
+    "version":  "1.0.5",
+    "description":  "OpenRouter Provider List — 在「插件 → 插件配置」填写 OpenRouter 请求使用的提供商列表与量化位数限制，作为 provider.only / provider.order / provider.quantizations 注入；设置通过 settings 服务持久化到 DSH 设置文档。",
     "type":  "module",
     "main":  "lib/index.js",
     "repository":  {
@@ -31,7 +31,9 @@
                            }
             },
     "peerDependencies":  {
-                             "@deepseek-ai/cordis":  "^4.0.1"
+                             "@deepseek-ai/cordis":  "^4.0.1",
+                             "@deepseek-ai/dsh-settings":  "^0.1.1-rc.2",
+                             "@deepseek-ai/schemastery":  "^3.18.1"
                          },
     "keywords":  [
                      "deepseek",

@@ -1,6 +1,6 @@
 # dsh-openrouter-providers
 
-DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。设置**持久化**到工作区状态文件，重启后自动恢复。
+DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。设置通过 **DSH settings 服务**持久化到设置文档（`~/.dsh/settings.yaml`），与其它插件一致，重启后自动恢复。
 
 ## 功能
 
@@ -8,7 +8,7 @@ DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 Open
   - **仅允许这些提供商** → 请求体注入 `provider: { only: [...], allow_fallbacks: false }`
   - **按顺序优先尝试** → 注入 `provider: { order: [...], allow_fallbacks: true }`
   - **量化位数限制** → 注入 `provider: { quantizations: ['int4' | 'int8' | ...] }`（可选，默认不限制；合法值见 [OpenRouter Quantization](https://openrouter.ai/docs/guides/routing/provider-selection#quantization)）
-  - 可整体开关；保存后写入 `<workspaceRoot>/.dsh-plugins/openrouter-providers.json`
+  - 可整体开关；保存后写入 DSH 设置文档（`openrouter-providers` 命名空间，`~/.dsh/settings.yaml`）
 - **请求注入**：监听 `llm/stream` waterfall——当请求的 provider 路由为 `openrouter`（已启用且列表非空或设置了量化限制）时，把请求重路由到插件自研的 chat-completions adapter，由它构造请求体注入 `provider` 字段；`reasoning.effort`（off/low/medium/high/max，均为 OpenRouter 合法值）按契约透传。会话日志与 UI 仍显示 `openrouter`。
 - **凭据**：复用现有 `OPENROUTER_API_KEY`（通过 `credentials` 服务解析，与 `llm-pi-ai` 的 `apiKeyEnv` 一致）。
 
@@ -70,7 +70,7 @@ pnpm add dsh-openrouter-providers@file:D:\\path\\to\\dsh-openrouter-providers
 ## 工作原理（简要）
 
 - **传输层**：动态插件环境没有 `fetch` 内置，adapter 通过 `subprocess` 服务派生 `node -e` 子进程执行 HTTP + SSE 流式解析（文本/推理/工具调用增量、usage、`[DONE]`、错误分类 AUTH/RATE_LIMIT/INVALID_REQUEST/SERVER 等）。
-- **状态持久化**：`fs` 服务写入 `<workspaceRoot>/.dsh-plugins/openrouter-providers.json`（自动建目录），启动时加载；写入显式使用 `workspace-write` 沙箱策略。
+- **状态持久化**：`settings` 服务注册 `openrouter-providers` 命名空间，设置写入 DSH 设置文档（默认 `~/.dsh/settings.yaml`），与其他插件一致；首次启动会自动把旧版工作区状态文件（`<workspaceRoot>/.dsh-plugins/openrouter-providers.json`，v1.0.4 及以前）迁移进设置文档。
 - **Client 通信**：插件配置卡通过 HTTP API `GET/POST /api/openrouter-providers/state` 读写状态（Host 端经 `webServer` 注册）。
 
 ## 限制
