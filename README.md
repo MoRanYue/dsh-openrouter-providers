@@ -4,7 +4,7 @@ DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 Open
 
 ## 功能
 
-- **插件配置卡**（插件 → 插件配置 → OpenRouter 提供商列表）：填写提供商 slug 列表（每行一个）、选择路由模式、选择量化位数限制：
+- **插件配置卡**（插件 → 插件配置 → OpenRouter 提供商列表）：以**折叠卡片**形式展示（与内置插件卡一致的外观 —— 点击头部展开/收起、有未保存标记与保存/撤销按钮），填写提供商 slug 列表（每行一个）、选择路由模式、选择量化位数限制：
   - **仅允许这些提供商** → 请求体注入 `provider: { only: [...], allow_fallbacks: false }`
   - **按顺序优先尝试** → 注入 `provider: { order: [...], allow_fallbacks: true }`
   - **量化位数限制** → 注入 `provider: { quantizations: ['int4' | 'int8' | ...] }`（可选，默认不限制；合法值见 [OpenRouter Quantization](https://openrouter.ai/docs/guides/routing/provider-selection#quantization)）

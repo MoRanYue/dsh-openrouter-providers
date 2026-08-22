@@ -1,6 +1,6 @@
 {
     "name":  "dsh-openrouter-providers",
-    "version":  "1.0.5",
+    "version":  "1.0.6",
     "description":  "OpenRouter Provider List — 在「插件 → 插件配置」填写 OpenRouter 请求使用的提供商列表与量化位数限制，作为 provider.only / provider.order / provider.quantizations 注入；设置通过 settings 服务持久化到 DSH 设置文档。",
     "type":  "module",
     "main":  "lib/index.js",
