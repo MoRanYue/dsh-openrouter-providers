@@ -11,6 +11,7 @@ DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 Open
   - 可整体开关；保存后写入 DSH 设置文档（`openrouter-providers` 命名空间，`~/.dsh/settings.yaml`）
 - **请求注入**：监听 `llm/stream` waterfall——当请求的 provider 路由为 `openrouter`（已启用且列表非空或设置了量化限制）时，把请求重路由到插件自研的 chat-completions adapter，由它构造请求体注入 `provider` 字段；`reasoning.effort`（off/low/medium/high/max，均为 OpenRouter 合法值）按契约透传。会话日志与 UI 仍显示 `openrouter`。
 - **凭据**：复用现有 `OPENROUTER_API_KEY`（通过 `credentials` 服务解析，与 `llm-pi-ai` 的 `apiKeyEnv` 一致）。
+- **应用归属（App Attribution）**：请求携带 `HTTP-Referer: https://github.com/deepseek-ai/deepseek-harness`、`X-OpenRouter-Title: DeepSeek Harness OpenRouter` 与 `X-OpenRouter-Categories: cli-agent` 头，使 OpenRouter 界面/排行榜中显示为 `DeepSeek Harness OpenRouter` 而非 Unknown（[OpenRouter App Attribution 文档](https://openrouter.ai/docs/app-attribution)）。
 
 ## 安装（bundle 挂载）
 
