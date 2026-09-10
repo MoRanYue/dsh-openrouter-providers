@@ -2,6 +2,8 @@
 
 DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。设置通过 **DSH settings 服务**持久化到设置文档（`~/.dsh/settings.yaml`），与其它插件一致，重启后自动恢复。
 
+**适配版本**：DeepSeek Harness `0.1.5-rc.1` —— `peerDependencies` 声明 `@deepseek-ai/dsh-settings@^0.1.5-rc.1`（DSH 0.1.5-rc.1 的 lockstep 版本），插件市场据此判定并在插件卡片上显示「适配当前 DSH 0.1.5-rc.1」。更早的 DSH 版本不在本插件的适配声明范围内。
+
 ## 功能
 
 - **插件配置卡**（插件 → 插件配置 → OpenRouter 提供商列表）：以**折叠卡片**形式展示（与内置插件卡一致的外观 —— 点击头部展开/收起、有未保存标记与保存/撤销按钮），填写提供商 slug 列表（每行一个）、选择路由模式、选择量化位数限制：
