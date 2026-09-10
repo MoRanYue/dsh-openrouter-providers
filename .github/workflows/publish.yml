@@ -1,5 +1,5 @@
 # Automatically publish to npm via OIDC Trusted Publishing when a version tag
-# (vX.Y.Z) is pushed, and on manual workflow_dispatch.
+# (vX.Y.Z) is pushed, then create the matching GitHub Release.
 #
 # No NODE_AUTH_TOKEN: authentication comes from GitHub's OIDC token, which npm
 # validates against the Trusted Publisher configured on npmjs.com for this
@@ -16,7 +16,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # contents: write is what lets this job create the GitHub Release.
+      contents: write
       # OIDC + provenance attestation require id-token write access.
       id-token: write
     steps:
@@ -40,3 +41,24 @@ jobs:
 
       - name: Publish to npm (OIDC trusted publishing)
         run: npm publish --provenance --access public
+
+      # Runs only after a successful publish, so a Release always records a
+      # version that is actually on npm. Tag pushes only: a manual dispatch has
+      # no tag ref, and its version check stops the run before this step.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="$GITHUB_REF_NAME"
+          VERSION="${TAG#v}"
+          # Re-running a tag push must not fail on the release it already made.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — leaving it untouched"
+            exit 0
+          fi
+          gh release create "$TAG" \
+            --verify-tag \
+            --title "$TAG" \
+            --generate-notes \
+            --notes "npm: https://www.npmjs.com/package/dsh-openrouter-providers/v/${VERSION} · 安装：pnpm add dsh-openrouter-providers@${VERSION}"
