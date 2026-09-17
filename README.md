@@ -1,5 +1,7 @@
 # dsh-openrouter-providers
 
+中文 | [English](README.en.md)
+
 DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。设置通过 **DSH settings 服务**持久化到设置文档（`~/.dsh/settings.yaml`），与其它插件一致，重启后自动恢复。
 
 **适配版本**：DeepSeek Harness `0.1.5-rc.1` —— `peerDependencies` 声明 `@deepseek-ai/dsh-settings@^0.1.5-rc.1`（DSH 0.1.5-rc.1 的 lockstep 版本），插件市场据此判定并在插件卡片上显示「适配当前 DSH 0.1.5-rc.1」。更早的 DSH 版本不在本插件的适配声明范围内。
@@ -11,6 +13,7 @@ DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 Open
   - **按顺序优先尝试** → 注入 `provider: { order: [...], allow_fallbacks: true }`
   - **量化位数限制** → 注入 `provider: { quantizations: ['int4' | 'int8' | ...] }`（可选，默认不限制；合法值见 [OpenRouter Quantization](https://openrouter.ai/docs/guides/routing/provider-selection#quantization)）
   - 可整体开关；保存后写入 DSH 设置文档（`openrouter-providers` 命名空间，`~/.dsh/settings.yaml`）
+- **界面跟随 DSH 语言**：卡片文案来自插件注册的 `openrouter-providers` locale 命名空间（`zh` / `en` 双语词典），在「设置 → 通用」切换语言后卡片即时重渲染，无需刷新页面；宿主没有 locale 服务时回退中文文案。
 - **请求注入**：监听 `llm/stream` waterfall——当请求的 provider 路由为 `openrouter`（已启用且列表非空或设置了量化限制）时，把请求重路由到插件自研的 chat-completions adapter，由它构造请求体注入 `provider` 字段；`reasoning.effort`（off/low/medium/high/max，均为 OpenRouter 合法值）按契约透传。会话日志与 UI 仍显示 `openrouter`。
 - **凭据**：复用现有 `OPENROUTER_API_KEY`（通过 `credentials` 服务解析，与 `llm-pi-ai` 的 `apiKeyEnv` 一致）。
 - **应用归属（App Attribution）**：请求携带 `HTTP-Referer: https://github.com/deepseek-ai/deepseek-harness`、`X-OpenRouter-Title: DeepSeek Harness OpenRouter` 与 `X-OpenRouter-Categories: cli-agent` 头，使 OpenRouter 界面/排行榜中显示为 `DeepSeek Harness OpenRouter` 而非 Unknown（[OpenRouter App Attribution 文档](https://openrouter.ai/docs/app-attribution)）。
