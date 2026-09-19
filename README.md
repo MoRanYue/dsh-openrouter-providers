@@ -2,18 +2,25 @@
 
 中文 | [English](README.en.md)
 
-DeepSeek Harness 插件：在**「插件」→「插件配置」**中填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。设置通过 **DSH settings 服务**持久化到设置文档（`~/.dsh/settings.yaml`），与其它插件一致，重启后自动恢复。
+DeepSeek Harness 插件：填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。设置通过 **DSH settings 服务**持久化到设置文档（`~/.dsh/settings.yaml`），与其它插件一致，重启后自动恢复。
 
 **适配版本**：DeepSeek Harness `0.1.5-rc.1` —— `peerDependencies` 声明 `@deepseek-ai/dsh-settings@^0.1.5-rc.1`（DSH 0.1.5-rc.1 的 lockstep 版本），插件市场据此判定并在插件卡片上显示「适配当前 DSH 0.1.5-rc.1」。更早的 DSH 版本不在本插件的适配声明范围内。
 
+**配置入口（双栈）**：DSH `0.1.6-alpha.2` 把插件配置从设置搬到新的侧栏**「插件」页**，并退役了 `settings.plugin.item`。本插件同时注册两个 slot，由宿主声明决定哪个生效（未声明的那个永不触发，不会报错）：
+
+| 宿主 | slot | 位置 |
+| --- | --- | --- |
+| DSH ≥ `0.1.6-alpha.2` | `plugins.bundle.config`（键=包名） | 侧栏**插件** → 本组合包页面内的配置表单 |
+| DSH < `0.1.6-alpha.2` | `settings.plugin.item` | **设置** → **插件** → **插件配置** 内的折叠卡片 |
+
 ## 功能
 
-- **插件配置卡**（插件 → 插件配置 → OpenRouter 提供商列表）：以**折叠卡片**形式展示（与内置插件卡一致的外观 —— 点击头部展开/收起、有未保存标记与保存/撤销按钮），填写提供商 slug 列表（每行一个）、选择路由模式、选择量化位数限制：
+- **配置表单**：填写提供商 slug 列表（每行一个）、选择路由模式、选择量化位数限制：
   - **仅允许这些提供商** → 请求体注入 `provider: { only: [...], allow_fallbacks: false }`
   - **按顺序优先尝试** → 注入 `provider: { order: [...], allow_fallbacks: true }`
   - **量化位数限制** → 注入 `provider: { quantizations: ['int4' | 'int8' | ...] }`（可选，默认不限制；合法值见 [OpenRouter Quantization](https://openrouter.ai/docs/guides/routing/provider-selection#quantization)）
-  - 可整体开关；保存后写入 DSH 设置文档（`openrouter-providers` 命名空间，`~/.dsh/settings.yaml`）
-- **界面跟随 DSH 语言**：卡片文案来自插件注册的 `openrouter-providers` locale 命名空间（`zh` / `en` 双语词典），在「设置 → 通用」切换语言后卡片即时重渲染，无需刷新页面；宿主没有 locale 服务时回退中文文案。
+  - 可整体开关；保存后写入 DSH 设置文档（`openrouter-providers` 命名空间，`~/.dsh/settings.yaml`）。新「插件」页只有保存会写入，离开页面丢弃暂存修改；旧折叠卡片另提供「撤销」按钮与「未保存」徽标。
+- **界面跟随 DSH 语言**：文案来自插件注册的 `openrouter-providers` locale 命名空间（`zh` / `en` 双语词典），切换语言后界面即时重渲染，无需刷新页面；宿主没有 locale 服务时回退中文文案。
 - **请求注入**：监听 `llm/stream` waterfall——当请求的 provider 路由为 `openrouter`（已启用且列表非空或设置了量化限制）时，把请求重路由到插件自研的 chat-completions adapter，由它构造请求体注入 `provider` 字段；`reasoning.effort`（off/low/medium/high/max，均为 OpenRouter 合法值）按契约透传。会话日志与 UI 仍显示 `openrouter`。
 - **凭据**：复用现有 `OPENROUTER_API_KEY`（通过 `credentials` 服务解析，与 `llm-pi-ai` 的 `apiKeyEnv` 一致）。
 - **应用归属（App Attribution）**：请求携带 `HTTP-Referer: https://github.com/deepseek-ai/deepseek-harness`、`X-OpenRouter-Title: DeepSeek Harness OpenRouter` 与 `X-OpenRouter-Categories: cli-agent` 头，使 OpenRouter 界面/排行榜中显示为 `DeepSeek Harness OpenRouter` 而非 Unknown（[OpenRouter App Attribution 文档](https://openrouter.ai/docs/app-attribution)）。
@@ -68,7 +75,7 @@ pnpm add dsh-openrouter-providers@file:D:\\path\\to\\dsh-openrouter-providers
 ## 使用
 
 1. 确保模型的 provider 路由为 `openrouter`（模型选择器中选中 OpenRouter 下的模型）。
-2. 打开 插件 → 插件配置 → OpenRouter 提供商列表，填写提供商 slug（如 `DeepInfra`、`Together`），选择路由模式与量化位数限制，保存。
+2. 打开对应宿主的配置入口（见上表：DSH ≥ `0.1.6-alpha.2` 用侧栏**插件** → 本组合包页面；更早的宿主用**设置** → **插件** → **插件配置**），填写提供商 slug（如 `DeepInfra`、`Together`），选择路由模式与量化位数限制，保存。
 3. 之后的 OpenRouter 请求都会携带注入的 provider 路由参数。
 
 > 提供商 slug 格式参见 [OpenRouter Provider Routing 文档](https://openrouter.ai/docs/guides/routing/provider-selection)（`order`/`only` 字段）。
