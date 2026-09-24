@@ -1,7 +1,7 @@
 {
     "name": "dsh-openrouter-providers",
-    "version": "1.1.0",
-    "description": "OpenRouter Provider List — 填写 OpenRouter 请求使用的提供商列表与量化位数限制，作为 provider.only / provider.order / provider.quantizations 注入；设置通过 settings 服务持久化到 DSH 设置文档。配置入口双栈：DSH >= 0.1.6-alpha.2 在侧栏「插件」页的组合包页面，更早宿主在「设置 → 插件 → 插件配置」。",
+    "version": "1.2.0",
+    "description": "OpenRouter Provider List — 填写 OpenRouter 请求使用的提供商列表与量化位数限制，作为 provider.only / provider.order / provider.quantizations 注入。配置由插件自持（$DSH_HOME/openrouter-providers.json），不依赖 settings 命名空间注册，因此同时适配 DSH 0.1.5-rc.1 ~ 0.1.7-rc.1。配置入口：DSH >= 0.1.6-alpha.2 在侧栏「插件」页的组合包页面，更早宿主在「设置 → 插件 → 插件配置」。",
     "type": "module",
     "main": "lib/index.js",
     "repository": {
@@ -21,9 +21,11 @@
         "LICENSE"
     ],
     "engines": {
-        "node": "\u003e=22"
+        "node": "\u003e=22",
+        "dsh": ">=0.1.5-rc.1 <0.2.0"
     },
     "dsh": {
+        "manifestVersion": 1,
         "bundle": {
             "patch": "./cordis.patch.yml"
         },
@@ -32,9 +34,7 @@
         }
     },
     "peerDependencies": {
-        "@deepseek-ai/cordis": "^4.0.1",
-        "@deepseek-ai/dsh-settings": "^0.1.5-rc.1",
-        "@deepseek-ai/schemastery": "^3.18.1"
+        "@deepseek-ai/cordis": "^4.0.1"
     },
     "keywords": [
         "deepseek",

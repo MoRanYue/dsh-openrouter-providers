@@ -2,9 +2,11 @@
 
 [中文](README.md) | English
 
-A DeepSeek Harness plugin: fill in the **provider list** and **quantization cap** that OpenRouter requests should use, and the plugin injects them as `provider.only` / `provider.order` / `provider.quantizations` routing parameters into every OpenRouter model request. Settings persist through the **DSH settings service** into the settings document (`~/.dsh/settings.yaml`), like every other plugin, and are restored after a restart.
+A DeepSeek Harness plugin: fill in the **provider list** and **quantization cap** that OpenRouter requests should use, and the plugin injects them as `provider.only` / `provider.order` / `provider.quantizations` routing parameters into every OpenRouter model request. The plugin owns its configuration and writes it to `$DSH_HOME/openrouter-providers.json` (`~/.dsh/openrouter-providers.json` when `DSH_HOME` is unset); it is restored after a restart.
 
-**Compatible DSH version**: DeepSeek Harness `0.1.5-rc.1` — `peerDependencies` declares `@deepseek-ai/dsh-settings@^0.1.5-rc.1` (the lockstep version of DSH 0.1.5-rc.1), which is what the plugin market reads to show the compatibility badge on the plugin card. Earlier DSH versions fall outside this plugin's declared compatibility range.
+**Compatible DSH versions**: `0.1.5-rc.1` through `0.1.7-rc.1` (`engines.dsh: >=0.1.5-rc.1 <0.2.0`). This plugin imports no `@deepseek-ai/dsh-*` package at all — its only peer is `@deepseek-ai/cordis` — so the 0.1.7 breaking changes do not reach it.
+
+> **Why the settings service is no longer used**: DSH `0.1.7` removed settings namespace registration (`settings.register` / `SettingsScope` / `watch`) and now enumerates only `.volatile()` fields on profile entry Configs. A plugin built on the old API **fails silently** on 0.1.7: `apply` returns early, so neither the HTTP route nor the `llm/stream` reroute is registered, the settings page reports "Cannot read the current state (Host half unavailable)", and request injection never takes effect. This plugin owns its configuration document instead and treats the old namespace as an **optional, capability-detected enhancement** (below), so behavior is identical on old and new hosts.
 
 **Configuration entry points (dual-stack)**: DSH `0.1.6-alpha.2` moved plugin configuration out of Settings onto the new sidebar **Plugins** page and retired `settings.plugin.item`. This plugin registers both slots and lets the host's declarations decide which one applies (the undeclared one simply never fires — no error either way):
 
@@ -13,13 +15,15 @@ A DeepSeek Harness plugin: fill in the **provider list** and **quantization cap*
 | DSH ≥ `0.1.6-alpha.2` | `plugins.bundle.config` (keyed by package name) | Sidebar **Plugins** → this bundle's page → configuration form |
 | DSH < `0.1.6-alpha.2` | `settings.plugin.item` | **Settings** → **Plugins** → **Plugin configuration** → collapsible card |
 
+On old hosts that card is dispatched per settings namespace the Host serves, so the plugin **probes** for `settings.register` and registers an empty pass-through namespace only when it exists — purely so the card can be dispatched; it carries no values. From 0.1.7 on, that API is gone, the namespace is skipped, and nothing else is affected.
+
 ## Features
 
 - **Configuration form**: fill in provider slugs (one per line), pick the routing mode, and pick the quantization cap:
   - **Only these providers** → the request body carries `provider: { only: [...], allow_fallbacks: false }`
   - **Try in order** → injects `provider: { order: [...], allow_fallbacks: true }`
   - **Quantization cap** → injects `provider: { quantizations: ['int4' | 'int8' | ...] }` (optional, unrestricted by default; valid values in [OpenRouter Quantization](https://openrouter.ai/docs/guides/routing/provider-selection#quantization))
-  - The whole feature has a master switch; saving writes the DSH settings document (`openrouter-providers` namespace, `~/.dsh/settings.yaml`). On the new Plugins page only a save writes and leaving the page drops staged edits; the legacy card additionally offers a Discard button and an unsaved badge.
+  - The whole feature has a master switch; saving writes the plugin-owned configuration file (`$DSH_HOME/openrouter-providers.json`). On the new Plugins page only a save writes and leaving the page drops staged edits; the legacy card additionally offers a Discard button and an unsaved badge.
 - **Localized UI**: copy comes from the plugin's `openrouter-providers` locale namespace (`zh` / `en`); switching the language re-renders the UI live with no page reload. On hosts without the locale service it falls back to Chinese copy.
 - **Request injection**: the plugin listens on the `llm/stream` waterfall — when the requested provider route is `openrouter` (enabled, with a non-empty list or a quantization cap), the request is rerouted to the plugin's own chat-completions adapter, which builds the request body and injects the `provider` field; `reasoning.effort` (off/low/medium/high/max, all valid OpenRouter values) passes through unchanged. The session log and UI still show `openrouter`.
 - **Credentials**: reuses the existing `OPENROUTER_API_KEY` (resolved through the `credentials` service, matching `llm-pi-ai`'s `apiKeyEnv`).
@@ -83,8 +87,8 @@ Then add the package to the profile `package.json`'s `dependencies` and `dsh.pro
 ## How it works (brief)
 
 - **Transport**: the dynamic plugin environment has no built-in `fetch`, so the adapter spawns a `node -e` child process through the `subprocess` service to perform HTTP + SSE streaming parsing (text/reasoning/tool-call deltas, usage, `[DONE]`, error classification such as AUTH/RATE_LIMIT/INVALID_REQUEST/SERVER).
-- **State persistence**: the `settings` service registers the `openrouter-providers` namespace, and settings are written into the DSH settings document (default `~/.dsh/settings.yaml`), consistent with other plugins; on first start the legacy workspace state file (`<workspaceRoot>/.dsh-plugins/openrouter-providers.json`, v1.0.4 and earlier) is migrated into the settings document automatically.
-- **Client communication**: the configuration card reads and writes state over the HTTP API `GET/POST /api/openrouter-providers/state` (registered on the Host half through `webServer`).
+- **State persistence**: the plugin owns its configuration and writes `$DSH_HOME/openrouter-providers.json` (`~/.dsh/…` when `DSH_HOME` is unset), independent of the settings service. On first start, while the file still holds shipped defaults, the plugin tries each legacy location once, in order: `<workspaceRoot>/.dsh-plugins/openrouter-providers.json` (v1.0.4 and earlier), then `$DSH_HOME/settings.yaml.imported` (the renamed settings document 0.1.7 left behind, whose section for this plugin could not be imported because it declares no Config). The first source that holds values wins, and an existing configuration is never overwritten afterwards.
+- **Client communication**: the configuration card reads and writes state over the HTTP API `GET/POST /api/openrouter-providers/state` (registered on the Host half through `webServer`). The client now shows the status code and response excerpt for a non-2xx response instead of reporting every failure as "Host half unavailable".
 
 ## Limitations
 
