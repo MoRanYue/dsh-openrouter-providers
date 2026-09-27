@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OpenRouter Providers",
+    "description": "Restricts OpenRouter requests to a configured provider list and quantization cap."
+  }
+}

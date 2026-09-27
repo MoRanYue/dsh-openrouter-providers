@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OpenRouter 提供商列表",
+    "description": "把 OpenRouter 请求限制在指定提供商列表与量化位数内。"
+  }
+}

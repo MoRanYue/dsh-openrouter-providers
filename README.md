@@ -4,7 +4,7 @@
 
 DeepSeek Harness 插件：填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。配置由插件自持，写入 `$DSH_HOME/openrouter-providers.json`（未设置 `DSH_HOME` 时为 `~/.dsh/openrouter-providers.json`），重启后自动恢复。
 
-**适配版本**：DeepSeek Harness `0.1.5-rc.1` ~ `0.1.7-rc.1`（`engines.dsh: >=0.1.5-rc.1 <0.2.0`）。本插件不 import 任何 `@deepseek-ai/dsh-*` 包，唯一 peer 是 `@deepseek-ai/cordis`，因此不受 0.1.7 破坏性改动影响。
+**适配版本**：DeepSeek Harness `0.1.5-rc.1` ~ `0.1.7-rc.2`（`engines.dsh: >=0.1.5-rc.1 <0.2.0`）。本插件不 import 任何 `@deepseek-ai/dsh-*` 包，唯一 peer 是 `@deepseek-ai/cordis`，因此不受 0.1.7 破坏性改动影响。
 
 > **为什么不再用 settings 服务**：DSH `0.1.7` 删除了 settings 命名空间注册（`settings.register` / `SettingsScope` / `watch`），改为只枚举 profile 条目 Config 上的 `.volatile()` 字段。依赖旧 API 的插件在 0.1.7 上会**静默失效**——`apply` 提前返回，HTTP 路由与 `llm/stream` 重路由都不再注册，设置页显示「无法读取当前状态（Host 端不可用）」，且请求注入完全不生效。本插件改为自持配置文档，并只把旧命名空间当作**能力探测的可选增强**（见下），因此在新旧宿主上行为一致。
 
@@ -25,6 +25,7 @@ DeepSeek Harness 插件：填写 OpenRouter 请求使用的**提供商列表**�
   - **量化位数限制** → 注入 `provider: { quantizations: ['int4' | 'int8' | ...] }`（可选，默认不限制；合法值见 [OpenRouter Quantization](https://openrouter.ai/docs/guides/routing/provider-selection#quantization)）
   - 可整体开关；保存后写入插件自持的配置文件（`$DSH_HOME/openrouter-providers.json`）。新「插件」页只有保存会写入，离开页面丢弃暂存修改；旧折叠卡片另提供「撤销」按钮与「未保存」徽标。
 - **界面跟随 DSH 语言**：文案来自插件注册的 `openrouter-providers` locale 命名空间（`zh` / `en` 双语词典），切换语言后界面即时重渲染，无需刷新页面；宿主没有 locale 服务时回退中文文案。
+- **「插件」页显示名称与图标**：包内 `locale/zh.json` 与 `locale/en.json` 的 `meta.title` / `meta.description` 提供本地化显示名（中文「OpenRouter 提供商列表」/ 英文 `OpenRouter Providers`），因此插件列表里显示的是可读名称而非裸包名 `dsh-openrouter-providers`；`package.json` 的 `icon: "./icon.svg"` 提供卡片与行内图标（36×36 三层渐隐圆角条，示意「按列表逐级收窄提供商」）。两者都跟随 DSH 界面语言。注意 `exports` 必须包含 `"./locale/*.json": "./locale/*.json"`，否则 Node 的 exports 解析会抛 `ERR_PACKAGE_PATH_NOT_EXPORTED`，显示名静默回退为包名；`icon` 必须是**相对路径**、扩展名限 `.svg/.png/.jpg/.jpeg/.webp`、须位于包目录内且 ≤256 KiB，写错会报错（但只丢图标，名称仍生效）。
 - **请求注入**：监听 `llm/stream` waterfall——当请求的 provider 路由为 `openrouter`（已启用且列表非空或设置了量化限制）时，把请求重路由到插件自研的 chat-completions adapter，由它构造请求体注入 `provider` 字段；`reasoning.effort`（off/low/medium/high/max，均为 OpenRouter 合法值）按契约透传。会话日志与 UI 仍显示 `openrouter`。
 - **凭据**：复用现有 `OPENROUTER_API_KEY`（通过 `credentials` 服务解析，与 `llm-pi-ai` 的 `apiKeyEnv` 一致）。
 - **应用归属（App Attribution）**：请求携带 `HTTP-Referer: https://github.com/deepseek-ai/deepseek-harness`、`X-OpenRouter-Title: DeepSeek Harness OpenRouter` 与 `X-OpenRouter-Categories: cli-agent` 头，使 OpenRouter 界面/排行榜中显示为 `DeepSeek Harness OpenRouter` 而非 Unknown（[OpenRouter App Attribution 文档](https://openrouter.ai/docs/app-attribution)）。

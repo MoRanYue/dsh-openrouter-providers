@@ -1,9 +1,10 @@
 {
     "name": "dsh-openrouter-providers",
-    "version": "1.2.0",
-    "description": "OpenRouter Provider List — 填写 OpenRouter 请求使用的提供商列表与量化位数限制，作为 provider.only / provider.order / provider.quantizations 注入。配置由插件自持（$DSH_HOME/openrouter-providers.json），不依赖 settings 命名空间注册，因此同时适配 DSH 0.1.5-rc.1 ~ 0.1.7-rc.1。配置入口：DSH >= 0.1.6-alpha.2 在侧栏「插件」页的组合包页面，更早宿主在「设置 → 插件 → 插件配置」。",
+    "version": "1.3.0",
+    "description": "OpenRouter Provider List — 填写 OpenRouter 请求使用的提供商列表与量化位数限制，作为 provider.only / provider.order / provider.quantizations 注入。配置由插件自持（$DSH_HOME/openrouter-providers.json），不依赖 settings 命名空间注册，因此同时适配 DSH 0.1.5-rc.1 ~ 0.1.7-rc.2。配置入口：DSH >= 0.1.6-alpha.2 在侧栏「插件」页的组合包页面，更早宿主在「设置 → 插件 → 插件配置」。",
     "type": "module",
     "main": "lib/index.js",
+    "icon": "./icon.svg",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/MoRanYue/dsh-openrouter-providers.git"
@@ -11,10 +12,13 @@
     "exports": {
         ".": "./lib/index.js",
         "./client": "./lib/client.js",
+        "./locale/*.json": "./locale/*.json",
         "./package.json": "./package.json"
     },
     "files": [
         "lib",
+        "locale/*.json",
+        "icon.svg",
         "cordis.patch.yml",
         "README.md",
         "README.en.md",
