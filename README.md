@@ -4,7 +4,7 @@
 
 DeepSeek Harness 插件：填写 OpenRouter 请求使用的**提供商列表**与**量化位数限制**，并把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中。配置由插件自持，写入 `$DSH_HOME/openrouter-providers.json`（未设置 `DSH_HOME` 时为 `~/.dsh/openrouter-providers.json`），重启后自动恢复。
 
-**适配版本**：DeepSeek Harness `0.1.5-rc.1` ~ `0.1.7-rc.2`（`engines.dsh: >=0.1.5-rc.1 <0.2.0`）。本插件不 import 任何 `@deepseek-ai/dsh-*` 包，唯一 peer 是 `@deepseek-ai/cordis`，因此不受 0.1.7 破坏性改动影响。
+**适配版本**：DeepSeek Harness `0.1.5-rc.1` ~ `0.2.0-rc.2`（`engines.dsh: >=0.1.5-rc.1 <0.3.0`）。本插件不 import 任何 `@deepseek-ai/dsh-*` 包，唯一 peer 是 `@deepseek-ai/cordis`，因此不受 0.1.7 / 0.2.0 破坏性改动影响；跨 0.2 主版本已在真实 `0.2.0-rc.2` 上逐项复验（配置读写往返、`llm/stream` 重路由、真实 OpenRouter 路由、插件页显示名与图标）。
 
 > **为什么不再用 settings 服务**：DSH `0.1.7` 删除了 settings 命名空间注册（`settings.register` / `SettingsScope` / `watch`），改为只枚举 profile 条目 Config 上的 `.volatile()` 字段。依赖旧 API 的插件在 0.1.7 上会**静默失效**——`apply` 提前返回，HTTP 路由与 `llm/stream` 重路由都不再注册，设置页显示「无法读取当前状态（Host 端不可用）」，且请求注入完全不生效。本插件改为自持配置文档，并只把旧命名空间当作**能力探测的可选增强**（见下），因此在新旧宿主上行为一致。
 
