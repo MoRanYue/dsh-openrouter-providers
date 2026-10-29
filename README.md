@@ -2,9 +2,9 @@
 
 中文 | [English](README.en.md)
 
-DeepSeek Harness 插件：从 OpenRouter 官方目录勾选请求允许使用的**提供商**，或按**模型规则**分别限定，并可设置**量化位数限制**，把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数注入到所有 OpenRouter 模型请求中（含图片的多模态请求原样透传）。可选地把这些请求改经 [billion-context](https://github.com/ranxianglei/billion-context) 的压缩代理发出。配置由插件自持，写入 `$DSH_HOME/openrouter-providers.json`（未设置 `DSH_HOME` 时为 `~/.dsh/openrouter-providers.json`），重启后自动恢复。
+DeepSeek Harness 插件：从 OpenRouter 官方目录勾选请求允许使用的**提供商**，或按**模型规则**分别限定，并可设置**量化位数限制**与**服务层级**（`service_tier`），把它们作为 `provider.only` / `provider.order` / `provider.quantizations` 路由参数（以及顶层 `service_tier`）注入到所有 OpenRouter 模型请求中（含图片的多模态请求原样透传）。可选地把这些请求改经 [billion-context](https://github.com/ranxianglei/billion-context) 的压缩代理发出。配置由插件自持，写入 `$DSH_HOME/openrouter-providers.json`（未设置 `DSH_HOME` 时为 `~/.dsh/openrouter-providers.json`），重启后自动恢复。
 
-**适配版本**：DeepSeek Harness `0.1.5-rc.1` ~ `0.2.1-rc.2`（`engines.dsh: >=0.1.5-rc.1 <0.3.0`）。本插件不 import 任何 `@deepseek-ai/dsh-*` 包，唯一 peer 是 `@deepseek-ai/cordis`，因此不受 0.1.7 / 0.2.x 破坏性改动影响；跨 0.2 主版本已在真实 `0.2.0-rc.2`、`0.2.1-alpha.1`、`0.2.1-alpha.2`、`0.2.1-alpha.4` 与 `0.2.1-rc.2` 上逐项复验（配置读写往返、`llm/stream` 重路由、真实 OpenRouter 路由、billion-context 代理接入、插件页显示名与图标、设置页表单渲染、adapter 契约）。注意：DSH 自 `0.2.1-alpha.3` 起把 `engines.dsh` 当作**真实门禁**（优先于 `peerDependencies`，不匹配会直接拒绝加载），因此升级到 `0.3.x` 时需先放宽本行上界。
+**适配版本**：DeepSeek Harness `0.1.5-rc.1` ~ `0.2.1-rc.3`（`engines.dsh: >=0.1.5-rc.1 <0.3.0`）。本插件不 import 任何 `@deepseek-ai/dsh-*` 包，唯一 peer 是 `@deepseek-ai/cordis`，因此不受 0.1.7 / 0.2.x 破坏性改动影响；跨 0.2 主版本已在真实 `0.2.0-rc.2`、`0.2.1-alpha.1`、`0.2.1-alpha.2`、`0.2.1-alpha.4`、`0.2.1-rc.2` 与 `0.2.1-rc.3` 上逐项复验（配置读写往返、`llm/stream` 重路由、真实 OpenRouter 路由、billion-context 代理接入、插件页显示名与图标、设置页表单渲染、adapter 契约、服务层级注入）。注意：DSH 自 `0.2.1-alpha.3` 起把 `engines.dsh` 当作**真实门禁**（优先于 `peerDependencies`，不匹配会直接拒绝加载），因此升级到 `0.3.x` 时需先放宽本行上界。
 
 > **为什么不再用 settings 服务**：DSH `0.1.7` 删除了 settings 命名空间注册（`settings.register` / `SettingsScope` / `watch`），改为只枚举 profile 条目 Config 上的 `.volatile()` 字段。依赖旧 API 的插件在 0.1.7 上会**静默失效**——`apply` 提前返回，HTTP 路由与 `llm/stream` 重路由都不再注册，设置页显示「无法读取当前状态（Host 端不可用）」，且请求注入完全不生效。本插件改为自持配置文档，并只把旧命名空间当作**能力探测的可选增强**（见下），因此在新旧宿主上行为一致。
 
@@ -30,7 +30,8 @@ DeepSeek Harness 插件：从 OpenRouter 官方目录勾选请求允许使用的
 - **「插件」页显示名称与图标**：包内 `locale/zh.json` 与 `locale/en.json` 的 `meta.title` / `meta.description` 提供本地化显示名（中文「OpenRouter 提供商列表」/ 英文 `OpenRouter Providers`），因此插件列表里显示的是可读名称而非裸包名 `dsh-openrouter-providers`；`package.json` 的 `icon: "./icon.svg"` 提供卡片与行内图标（36×36 三层渐隐圆角条，示意「按列表逐级收窄提供商」）。两者都跟随 DSH 界面语言。注意 `exports` 必须包含 `"./locale/*.json": "./locale/*.json"`，否则 Node 的 exports 解析会抛 `ERR_PACKAGE_PATH_NOT_EXPORTED`，显示名静默回退为包名；`icon` 必须是**相对路径**、扩展名限 `.svg/.png/.jpg/.jpeg/.webp`、须位于包目录内且 ≤256 KiB，写错会报错（但只丢图标，名称仍生效）。
 - **路由识别不看名字**：profile 里的 provider 可以随意重命名（例如叫 `aaaa`），只要它的 `baseURL` 主机是 `openrouter.ai`（含子域），或 `apiKeyEnv` 是 `OPENROUTER_API_KEY`，就算作 OpenRouter 路由——识别结果 30 秒缓存，改名无需重启。内置的 `openrouter` 永远算在内，也可以在配置文件的 `routes` 数组里手填额外路由名。判定刻意锚定 URL 的**主机**而不是子串匹配：`/openrouter\.ai/` 也会命中无关域名里的路径片段。
 - **图片输入**：多模态请求里的图片会转成 OpenRouter 的 `image_url` 部分（`data:` URL）发出，不再一律拒绝。图片字节来自 `attachments` 服务给出的宿主路径；已从上下文移出（`offloaded`）的图片降级为文字占位符，不会重发已不属于历史的字节。请求级图片预算沿用宿主的 `IMAGE_OFFLOAD_REQUIRED` 契约——超限时由 `compaction-image-offload` 把最旧的图片移出上下文后重试，用户看不到失败——并且**按 provider 实际配置的 `maxRequestImageBytes` 执行**，不再写死 20 MiB。
-- **请求注入**：监听 `llm/stream` waterfall——当请求的 provider 路由被认定为 OpenRouter（已启用且列表非空、或设置了量化限制、或开启了代理）时，把请求重路由到插件自研的 chat-completions adapter，由它构造请求体注入 `provider` 字段；`reasoning.effort`（off/low/medium/high/max，均为 OpenRouter 合法值）按契约透传。会话日志与 UI 仍显示原来的路由名。
+- **服务层级（可选）**：注入顶层 `service_tier`，取 `default` / `flex` / `priority` / `ultrafast`（[OpenRouter Service Tiers](https://openrouter.ai/docs/guides/features/service-tiers)）。两个容易混淆的地方：**「不注入」和 `default` 不是一回事**——不注入时交给 workspace 默认，且 `:nitro` / `:floor` 变体仍可能把层级端点拉进候选池；注入 `default` 才明确钉住标准层并关掉这条通路。`ultrafast` 需要足够的 `max_tokens`，否则会退化成 `priority`。不提供 `fast`，它是 `priority` 的同义词。表单下方会显示**上一次请求实际由哪个层级与提供商服务**（响应里的 `service_tier`），因为 OpenRouter 对无法满足的层级是静默回落的——不显示的话设了也看不出有没有生效。
+- **请求注入**：监听 `llm/stream` waterfall——当请求的 provider 路由被认定为 OpenRouter（已启用且列表非空、或设置了量化限制、或指定了服务层级、或开启了代理）时，把请求重路由到插件自研的 chat-completions adapter，由它构造请求体注入 `provider` 字段；`reasoning.effort`（off/low/medium/high/max，均为 OpenRouter 合法值）按契约透传。会话日志与 UI 仍显示原来的路由名。
 - **billion-context 压缩代理（可选）**：把代理开关设为**自动**后，插件会探测本机运行中的 [billion-context](https://github.com/ranxianglei/billion-context) 代理，命中则把请求改经它的 `/bili/` 入口发出（`<origin>/bili/https://openrouter.ai/api/v1/chat/completions`），从而获得其上下文压缩；探测不到代理时**直连**，不会因为装了本插件而让生成失败。代理开关与「提供商限制」总开关**互相独立**：只想压缩、不想限制路由时，关掉提供商限制、单独开启代理即可。
 - **凭据**：复用现有 `OPENROUTER_API_KEY`——优先通过 `credentials` 服务解析（与 `llm-pi-ai` 的 `apiKeyEnv` 一致），读不到时回退到启动 `dsh web` 的 shell 里的同名环境变量，因此不必在界面里再填一次。
 - **应用归属（App Attribution）**：请求携带 `HTTP-Referer: https://github.com/deepseek-ai/deepseek-harness`、`X-OpenRouter-Title: DeepSeek Harness OpenRouter` 与 `X-OpenRouter-Categories: cli-agent` 头，使 OpenRouter 界面/排行榜中显示为 `DeepSeek Harness OpenRouter` 而非 Unknown（[OpenRouter App Attribution 文档](https://openrouter.ai/docs/app-attribution)）。
@@ -85,7 +86,7 @@ pnpm add dsh-openrouter-providers@file:D:\\path\\to\\dsh-openrouter-providers
 ## 使用
 
 1. 确保模型的 provider 路由是 OpenRouter——内置的 `openrouter` 路由，或 profile 里任何 `baseURL` 主机为 `openrouter.ai`、`apiKeyEnv` 为 `OPENROUTER_API_KEY` 的 provider 都算（见上文「路由识别不看名字」）。
-2. 打开对应宿主的配置入口（见上表：DSH ≥ `0.1.6-alpha.2` 用侧栏**插件** → 本组合包页面；更早的宿主用**设置** → **插件** → **插件配置**），在目录里勾选提供商（目录里没有的可以手填 slug），选择路由模式与量化位数限制，保存。需要按模型细分时，在下方「按模型规则」里添加规则。
+2. 打开对应宿主的配置入口（见上表：DSH ≥ `0.1.6-alpha.2` 用侧栏**插件** → 本组合包页面；更早的宿主用**设置** → **插件** → **插件配置**），在目录里勾选提供商（目录里没有的可以手填 slug），选择路由模式、量化位数限制与服务层级，保存。需要按模型细分时，在下方「按模型规则」里添加规则。
 3. 之后的 OpenRouter 请求都会携带注入的 provider 路由参数。
 4. 如需上下文压缩：先启动 billion-context 代理（`bili`），再把本插件的**代理**一项设为**自动**并保存。表单下方会显示是否已接入（`代理已接入: http://127.0.0.1:18790`）或未检测到；检测到即生效，无需重启 DSH。
 
@@ -97,6 +98,7 @@ pnpm add dsh-openrouter-providers@file:D:\\path\\to\\dsh-openrouter-providers
   "mode": "only",
   "providers": ["deepinfra", "novita"],
   "quantization": "off",
+  "serviceTier": "off",
   "proxy": "auto",
   "modelRules": [
     { "pattern": "xiaomi/mimo*", "mode": "only", "providers": ["makora", "xiaomi"] },
@@ -116,6 +118,7 @@ pnpm add dsh-openrouter-providers@file:D:\\path\\to\\dsh-openrouter-providers
 - **Client 通信**：插件配置卡通过 HTTP API `GET/POST /api/openrouter-providers/state` 读写状态（Host 端经 `webServer` 注册）。客户端对非 2xx 响应会显示状态码与响应片段，不再把所有失败笼统报成「Host 端不可用」。
 - **提供商目录**：同一个 state 路由还会返回 `catalog`（`[{slug, name}]`）与 `catalogSource`（`live` / `builtin`）。目录用 `node:https` 直连抓取——与代理探测同理，**不能**用 `globalThis.fetch`，否则挂了 billion-context 的宿主会把这次抓取也改写成经代理的请求。缓存 24 小时；抓取失败时保留上一次成功的列表且 `catalogSource` 仍为 `live`（陈旧但确实来自官方），从未成功过则用内置快照并标 `builtin`，界面据此显示「离线或未刷新」。设置页对刷新最多等 1.5 秒，离线主机不会把表单卡住。
 - **adapter 契约**：插件注册的是普通对象 adapter（不是 `LlmAdapter` 子类），没有基类默认值兜底，所以必须**逐项**实现宿主会调用的成员。除 `stream` 外，`LlmRuntime` 会调用 `providerInfo` / `providerRetryPolicy` / `imageRequestPricing` / `imageRequestTarget` / `listModels` / `resolveModel` / `prepareCall`——少任何一个，对应调用点就会抛 `TypeError: adapter.<name> is not a function`。本插件的 `listModels()` 返回空数组，因此该合成路由不会出现在模型目录里（只能由 `llm/stream` 在传输层内部使用）；`imageRequestPricing()` 返回 `undefined`，让 token meter 与 spill policy 沿用各自的中性估算；`imageRequestTarget()` 原样回传归一化后的宽高与字节上限，与基类默认行为一致（该成员由 DSH `0.2.1-alpha.3` 引入，目前只有 CUA 截图路径会调用）。
+- **服务层级**：`service_tier` 是**顶层**字段，不在 `provider` 里面。它有三个状态，而不是两个：「不注入」（`off`）、`default`、以及 `flex`/`priority`/`ultrafast`。`default` 看着像「没选」，实际是**主动钉住标准层**——不注入时 `:nitro` / `:floor` 变体仍可把层级端点拉进候选池，注入 `default` 才关掉这条通路。OpenRouter **不校验**这个字段：实测传任意字符串（连 `bogus`）都返回 200 并静默忽略，因此合法值在插件侧白名单里强制，越界值在写配置时就被丢弃。响应里的 `service_tier` 是唯一能确认生效的信号（`null` 表示这次由非层级端点服务），子进程把它与 `provider` 一起作为 `served` 事件透出，Host 记住最近一次并随 state 路由返回，表单据此显示「上次实际由哪个层级服务」。
 - **billion-context 代理接入**：代理地址**不硬编码端口**，按 billion-context 自身的发现顺序解析：`BILI_MCP_PROXY` 环境变量 → `$XDG_STATE_HOME/billion-context/proxy-origin`（裸 URL 或实例 JSON 两种形态都支持）→ 同目录 `port-zone.json` 的 `lanes.dsh` → 兜底 `http://127.0.0.1:8787`；每个候选都先请求 `/__bili/health` 确认 `ok: true` 才采用。探测**刻意用 `node:http`/`node:https` 而非 `globalThis.fetch`**——billion-context 挂载后会把宿主的 `fetch` 补丁成「重写 URL 为 `<origin>/bili/<原URL>`」，若用 `fetch` 探测，探测请求本身会被改写成指向代理自己的请求，导致永远「探测成功」。结果缓存 30 秒并在后台刷新，请求路径只读缓存（不会为探测阻塞生成）；设置页每次加载都会重新探测，并显示当前是否真的接入。请求会带 `x-acp-session: <sessionId>` 头，让代理按会话稳定分桶累积压缩状态（该值来自宿主在 `GenerateOptions.sessionId` 上盖的会话标识，专为这类传输层元数据提供）。
 
 ## 限制
@@ -125,6 +128,7 @@ pnpm add dsh-openrouter-providers@file:D:\\path\\to\\dsh-openrouter-providers
 - 全局「启用提供商限制」关闭时，**所有按模型规则也一并失效**（界面会把规则区置灰），因为该开关是总闸门。
 - `only` 模式下 `allow_fallbacks=false`：列表中的提供商全部不可用时请求失败（OpenRouter 行为）。
 - 代理接入是**按请求**判断的：代理中途停止时，最多 30 秒（探测缓存 TTL）后自动回退直连；代理中途启动时同样最多 30 秒后自动接入，或打开一次设置页立即生效。
+- 服务层级是**尽力而为**：OpenRouter 对无法满足的层级不报错、直接回落，所以设了 `flex` 却看到「未命中层级端点」是正常结果，不是插件失效。`ultrafast` 还需要足够的 `max_tokens`，否则退化成 `priority`。
 - 代理与「提供商限制」共用同一条传输通道（本插件的 adapter），因此开启代理时请求同样绕过宿主原生的 `openrouter` 路由——如果其它插件（如 billion-context 的 dsh-native）依赖宿主 `globalThis.fetch` 做拦截，那些拦截不会作用于本插件的流量，这是自持传输层的必然结果。
 
 ## License
